@@ -12,6 +12,26 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
+      path: /mutate-crypto-kubetrail-io-v1beta1-account
+  failurePolicy: Fail
+  name: maccount.kb.io
+  rules:
+  - apiGroups:
+    - crypto.kubetrail.io
+    apiVersions:
+    - v1beta1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - accounts
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
       path: /mutate-crypto-kubetrail-io-v1beta1-coin
   failurePolicy: Fail
   name: mcoin.kb.io
@@ -34,6 +54,26 @@ metadata:
   creationTimestamp: null
   name: validating-webhook-configuration
 webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /validate-crypto-kubetrail-io-v1beta1-account
+  failurePolicy: Fail
+  name: vaccount.kb.io
+  rules:
+  - apiGroups:
+    - crypto.kubetrail.io
+    apiVersions:
+    - v1beta1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - accounts
+  sideEffects: None
 - admissionReviewVersions:
   - v1
   clientConfig:

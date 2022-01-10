@@ -6,14 +6,14 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.7.0
   creationTimestamp: null
-  name: coins.crypto.kubetrail.io
+  name: accounts.crypto.kubetrail.io
 spec:
   group: crypto.kubetrail.io
   names:
-    kind: Coin
-    listKind: CoinList
-    plural: coins
-    singular: coin
+    kind: Account
+    listKind: AccountList
+    plural: accounts
+    singular: account
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
@@ -21,21 +21,13 @@ spec:
       jsonPath: .status.phase
       name: Status
       type: string
-    - description: Ticker of coin
-      jsonPath: .spec.ticker
-      name: Ticker
-      type: string
-    - description: Price of coin
-      jsonPath: .status.meta.price
-      name: Price
-      type: string
     - description: Number of coins
-      jsonPath: .spec.numCoins
-      name: NumCoins
-      type: string
-    - description: Account in coin
+      jsonPath: .status.meta.numCoins
+      name: Coins
+      type: integer
+    - description: Balance in coin
       jsonPath: .status.meta.balance
-      name: Account
+      name: Balance
       type: string
     - jsonPath: .metadata.creationTimestamp
       name: Age
@@ -43,7 +35,7 @@ spec:
     name: v1beta1
     schema:
       openAPIV3Schema:
-        description: Coin is the Schema for the coins API
+        description: Account is the Schema for the accounts API
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -58,17 +50,10 @@ spec:
           metadata:
             type: object
           spec:
-            description: CoinSpec defines the desired state of Coin
-            properties:
-              currency:
-                type: string
-              numCoins:
-                type: string
-              ticker:
-                type: string
+            description: AccountSpec defines the desired state of Account
             type: object
           status:
-            description: CoinStatus defines the observed state of Coin
+            description: AccountStatus defines the observed state of Account
             properties:
               conditions:
                 items:
@@ -142,12 +127,16 @@ spec:
               message:
                 type: string
               meta:
-                description: CoinStatusMeta packages meta info on coin price
+                description: AccountStatusMeta packages meta info on account
                 properties:
                   balance:
                     type: string
-                  price:
-                    type: string
+                  coinList:
+                    items:
+                      type: string
+                    type: array
+                  numCoins:
+                    type: integer
                 type: object
               phase:
                 type: string
