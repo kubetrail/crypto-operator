@@ -1,4 +1,5 @@
 ## Append samples you want in your CSV to this file as resources ##
 resources:
 - crypto_v1beta1_coin.yaml
+- crypto_v1beta1_account.yaml
 #+kubebuilder:scaffold:manifestskustomizesamples

@@ -9,6 +9,32 @@ rules:
 - apiGroups:
   - crypto.kubetrail.io
   resources:
+  - accounts
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - crypto.kubetrail.io
+  resources:
+  - accounts/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - crypto.kubetrail.io
+  resources:
+  - accounts/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - crypto.kubetrail.io
+  resources:
   - coins
   verbs:
   - create

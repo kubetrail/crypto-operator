@@ -2,12 +2,8 @@ package controllers
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"io"
-	"net/http"
 	"strconv"
-	"strings"
 	"time"
 
 	cryptov1beta1 "github.com/kubetrail/crypto-operator/api/v1beta1"
@@ -18,14 +14,14 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
-func (r *CoinReconciler) FinalizeStatus(ctx context.Context, clientObject client.Object) error {
+func (r *AccountReconciler) FinalizeStatus(ctx context.Context, clientObject client.Object) error {
 	if !controllerutil.ContainsFinalizer(clientObject, finalizer) {
 		return nil
 	}
 
 	reqLogger := log.FromContext(ctx)
 
-	object, ok := clientObject.(*cryptov1beta1.Coin)
+	object, ok := clientObject.(*cryptov1beta1.Account)
 	if !ok {
 		err := fmt.Errorf("cientObject to object type assertion error")
 		reqLogger.Error(err, "failed to get object instance")
@@ -34,7 +30,7 @@ func (r *CoinReconciler) FinalizeStatus(ctx context.Context, clientObject client
 
 	// Update the status of the object if not terminating
 	if object.Status.Phase != phaseTerminating {
-		object.Status = cryptov1beta1.CoinStatus{
+		object.Status = cryptov1beta1.AccountStatus{
 			Phase:      phaseTerminating,
 			Conditions: object.Status.Conditions,
 			Message:    "object is marked for deletion",
@@ -52,14 +48,14 @@ func (r *CoinReconciler) FinalizeStatus(ctx context.Context, clientObject client
 	return nil
 }
 
-func (r *CoinReconciler) FinalizeResources(ctx context.Context, clientObject client.Object, req ctrl.Request) error {
+func (r *AccountReconciler) FinalizeResources(ctx context.Context, clientObject client.Object, req ctrl.Request) error {
 	if !controllerutil.ContainsFinalizer(clientObject, finalizer) {
 		return nil
 	}
 
 	reqLogger := log.FromContext(ctx)
 
-	object, ok := clientObject.(*cryptov1beta1.Coin)
+	object, ok := clientObject.(*cryptov1beta1.Account)
 	if !ok {
 		err := fmt.Errorf("clientObject to object type assertion error")
 		reqLogger.Error(err, "failed to get object instance")
@@ -71,7 +67,7 @@ func (r *CoinReconciler) FinalizeResources(ctx context.Context, clientObject cli
 	var found bool
 	// Update the status of the object if pending
 	for i, condition := range object.Status.Conditions {
-		if condition.Reason == reasonDeletedCoin {
+		if condition.Reason == reasonDeleted {
 			object.Status.Conditions[i].LastTransitionTime = metav1.Time{Time: time.Now()}
 			found = true
 			break
@@ -84,27 +80,29 @@ func (r *CoinReconciler) FinalizeResources(ctx context.Context, clientObject cli
 			Status:             metav1.ConditionTrue,
 			ObservedGeneration: 0,
 			LastTransitionTime: metav1.Time{Time: time.Now()},
-			Reason:             reasonDeletedCoin,
-			Message:            "deleted coin",
+			Reason:             reasonDeleted,
+			Message:            "deleted object",
 		}
-		object.Status = cryptov1beta1.CoinStatus{
+		object.Status = cryptov1beta1.AccountStatus{
 			Phase:      object.Status.Phase,
 			Conditions: append(object.Status.Conditions, condition),
-			Message:    "deleted coin",
-			Reason:     reasonDeletedCoin,
+			Message:    "deleted object",
+			Reason:     reasonDeleted,
+		}
+
+		if err := r.Status().Update(ctx, object); err != nil {
+			reqLogger.Error(err, "failed to update object status")
+			return err
+		} else {
+			reqLogger.Info("updated object status")
+			return ObjectUpdated
 		}
 	}
 
-	if err := r.Status().Update(ctx, object); err != nil {
-		reqLogger.Error(err, "failed to update object status")
-		return err
-	} else {
-		reqLogger.Info("updated object status")
-		return ObjectUpdated
-	}
+	return nil
 }
 
-func (r *CoinReconciler) RemoveFinalizer(ctx context.Context, clientObject client.Object) error {
+func (r *AccountReconciler) RemoveFinalizer(ctx context.Context, clientObject client.Object) error {
 	if !controllerutil.ContainsFinalizer(clientObject, finalizer) {
 		return nil
 	}
@@ -120,7 +118,7 @@ func (r *CoinReconciler) RemoveFinalizer(ctx context.Context, clientObject clien
 	return ObjectUpdated
 }
 
-func (r *CoinReconciler) AddFinalizer(ctx context.Context, clientObject client.Object) error {
+func (r *AccountReconciler) AddFinalizer(ctx context.Context, clientObject client.Object) error {
 	if controllerutil.ContainsFinalizer(clientObject, finalizer) {
 		return nil
 	}
@@ -136,7 +134,7 @@ func (r *CoinReconciler) AddFinalizer(ctx context.Context, clientObject client.O
 	return ObjectUpdated
 }
 
-func (r *CoinReconciler) InitializeStatus(ctx context.Context, clientObject client.Object) error {
+func (r *AccountReconciler) InitializeStatus(ctx context.Context, clientObject client.Object) error {
 	reqLogger := log.FromContext(ctx)
 
 	if !controllerutil.ContainsFinalizer(clientObject, finalizer) {
@@ -145,7 +143,7 @@ func (r *CoinReconciler) InitializeStatus(ctx context.Context, clientObject clie
 		return err
 	}
 
-	object, ok := clientObject.(*cryptov1beta1.Coin)
+	object, ok := clientObject.(*cryptov1beta1.Account)
 	if !ok {
 		err := fmt.Errorf("cientObject to object type assertion error")
 		reqLogger.Error(err, "failed to get object instance")
@@ -162,7 +160,7 @@ func (r *CoinReconciler) InitializeStatus(ctx context.Context, clientObject clie
 	}
 
 	if !found {
-		object.Status = cryptov1beta1.CoinStatus{
+		object.Status = cryptov1beta1.AccountStatus{
 			Phase: phasePending,
 			Conditions: []metav1.Condition{
 				{
@@ -189,7 +187,7 @@ func (r *CoinReconciler) InitializeStatus(ctx context.Context, clientObject clie
 	return nil
 }
 
-func (r *CoinReconciler) ReconcileResources(ctx context.Context, clientObject client.Object, req ctrl.Request) error {
+func (r *AccountReconciler) ReconcileResources(ctx context.Context, clientObject client.Object, req ctrl.Request) error {
 	reqLogger := log.FromContext(ctx)
 
 	if !controllerutil.ContainsFinalizer(clientObject, finalizer) {
@@ -198,56 +196,66 @@ func (r *CoinReconciler) ReconcileResources(ctx context.Context, clientObject cl
 		return err
 	}
 
-	object, ok := clientObject.(*cryptov1beta1.Coin)
+	object, ok := clientObject.(*cryptov1beta1.Account)
 	if !ok {
 		err := fmt.Errorf("cientObject to object type assertion error")
 		reqLogger.Error(err, "failed to get object instance")
 		return err
 	}
 
-	url := fmt.Sprintf(
-		"https://api.coinbase.com/v2/prices/%s-%s/spot",
-		strings.ToLower(object.Spec.Ticker),
-		strings.ToLower(object.Spec.Currency),
-	)
-	response, err := http.Get(url)
-	if err != nil {
-		msg := "failed to get coin price"
-		err := fmt.Errorf("%s: %w", msg, err)
-		reqLogger.Error(err, msg)
-		return err
+	// if object has label key crypto.kubetrail.io/group then
+	// filter coins with that particular label key: value pair
+	var coinLabel string
+	for k, v := range object.Labels {
+		if k == label {
+			coinLabel = v
+			break
+		}
 	}
 
-	jb, err := io.ReadAll(response.Body)
-	if err != nil {
-		msg := "failed to read coin price json response"
-		err := fmt.Errorf("%s: %w", msg, err)
-		reqLogger.Error(err, msg)
-		return err
+	coins := &cryptov1beta1.CoinList{}
+	if len(coinLabel) > 0 {
+		if err := r.List(
+			ctx, coins,
+			client.InNamespace(object.Namespace),
+			client.MatchingLabels{
+				label: coinLabel,
+			},
+		); err != nil {
+			reqLogger.Error(err, "failed to get list of coins")
+			return err
+		}
+	} else {
+		if err := r.List(
+			ctx, coins,
+			client.InNamespace(object.Namespace),
+		); err != nil {
+			reqLogger.Error(err, "failed to get list of coins")
+			return err
+		}
 	}
 
-	price := &coinprice{}
-	if err := json.Unmarshal(jb, price); err != nil {
-		msg := "failed to parse json response from coin price query"
-		err := fmt.Errorf("%s-%w", msg, err)
-		reqLogger.Error(err, msg)
-		return err
-	}
+	var balance float64
+	var numCoins int
+	coinList := make([]string, 0, len(coins.Items))
+	for _, coin := range coins.Items {
+		if len(coin.Status.Meta.Balance) == 0 {
+			continue
+		}
 
-	n, err := strconv.ParseFloat(object.Spec.NumCoins, 64)
-	if err != nil {
-		msg := "failed to parse object numCoins"
-		err := fmt.Errorf("%s: %s", msg, err)
-		reqLogger.Error(err, msg)
-		return err
-	}
+		if coin.Status.Phase != phaseRunning {
+			continue
+		}
 
-	p, err := strconv.ParseFloat(price.Data.Amount, 64)
-	if err != nil {
-		msg := "failed to parse price data amount"
-		err := fmt.Errorf("%s: %s", msg, err)
-		reqLogger.Error(err, msg)
-		return err
+		b, err := strconv.ParseFloat(coin.Status.Meta.Balance, 64)
+		if err != nil {
+			reqLogger.Error(err, "failed to parse coin balance")
+			return err
+		}
+
+		balance += b
+		numCoins++
+		coinList = append(coinList, coin.Name)
 	}
 
 	found := false
@@ -256,7 +264,7 @@ func (r *CoinReconciler) ReconcileResources(ctx context.Context, clientObject cl
 	for i, condition := range object.Status.Conditions {
 		if condition.Type == conditionTypeRuntime &&
 			condition.Status == metav1.ConditionTrue &&
-			condition.Reason == reasonSyncedCoin {
+			condition.Reason == reasonSynced {
 			found = true
 			if time.Since(condition.LastTransitionTime.Time) > time.Minute {
 				foundIndex = i
@@ -270,37 +278,41 @@ func (r *CoinReconciler) ReconcileResources(ctx context.Context, clientObject cl
 		Status:             metav1.ConditionTrue,
 		ObservedGeneration: 0,
 		LastTransitionTime: metav1.Time{Time: time.Now()},
-		Reason:             reasonSyncedCoin,
-		Message:            "synced coin price",
+		Reason:             reasonSynced,
+		Message:            "synced coin prices",
 	}
 
 	if !found {
-		object.Status = cryptov1beta1.CoinStatus{
-			Meta: cryptov1beta1.CoinStatusMeta{
-				Price:   price.Data.Amount,
-				Balance: fmt.Sprintf("%f", n*p),
+		conditions := object.Status.Conditions
+		object.Status = cryptov1beta1.AccountStatus{
+			Meta: cryptov1beta1.AccountStatusMeta{
+				NumCoins: numCoins,
+				CoinList: coinList,
+				Balance:  fmt.Sprintf("%f", balance),
 			},
 			Phase:      phaseRunning,
-			Conditions: append(object.Status.Conditions, condition),
-			Message:    "synced coin price",
-			Reason:     reasonSyncedCoin,
+			Conditions: append(conditions, condition),
+			Message:    "synced coin prices",
+			Reason:     reasonSynced,
 		}
 		updated = true
 	} else {
 		if foundIndex >= 0 {
 			object.Status.Conditions[foundIndex] = condition
-			object.Status = cryptov1beta1.CoinStatus{
-				Meta: cryptov1beta1.CoinStatusMeta{
-					Price:   price.Data.Amount,
-					Balance: fmt.Sprintf("%f", n*p),
+			conditions := object.Status.Conditions
+			object.Status = cryptov1beta1.AccountStatus{
+				Meta: cryptov1beta1.AccountStatusMeta{
+					NumCoins: numCoins,
+					CoinList: coinList,
+					Balance:  fmt.Sprintf("%f", balance),
 				},
 				Phase:      phaseRunning,
-				Conditions: object.Status.Conditions,
-				Message:    "synced coin price",
-				Reason:     reasonSyncedCoin,
+				Conditions: conditions,
+				Message:    "synced coin prices",
+				Reason:     reasonSynced,
 			}
+			updated = true
 		}
-		updated = true
 	}
 
 	if updated {
@@ -308,19 +320,16 @@ func (r *CoinReconciler) ReconcileResources(ctx context.Context, clientObject cl
 			reqLogger.Error(err, "failed to update object status")
 			return err
 		} else {
-			reqLogger.Info("updated object status")
+			rateLimit(
+				fmt.Sprintf("%s-%s", object.Name, object.Namespace),
+				time.Hour*24,
+				func() {
+					reqLogger.Info("updated object status")
+				},
+			)
 			return ObjectUpdated
 		}
 	}
 
 	return nil
-}
-
-// coinprice is the response from coinbase coin price query
-type coinprice struct {
-	Data struct {
-		Base     string `json:"base"`
-		Currency string `json:"currency"`
-		Amount   string `json:"amount"`
-	} `json:"data"`
 }

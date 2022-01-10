@@ -1,0 +1,6 @@
+apiVersion: crypto.kubetrail.io/v1beta1
+kind: Account
+metadata:
+  name: account-sample
+spec:
+  # Add fields here
