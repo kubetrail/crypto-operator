@@ -33,9 +33,9 @@ spec:
       jsonPath: .spec.numCoins
       name: NumCoins
       type: string
-    - description: Account in coin
+    - description: Balance in coin
       jsonPath: .status.meta.balance
-      name: Account
+      name: Balance
       type: string
     - jsonPath: .metadata.creationTimestamp
       name: Age

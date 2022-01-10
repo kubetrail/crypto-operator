@@ -17,7 +17,7 @@ spec:
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
-    - description: Status of coin
+    - description: Status of account
       jsonPath: .status.phase
       name: Status
       type: string
@@ -25,7 +25,7 @@ spec:
       jsonPath: .status.meta.numCoins
       name: Coins
       type: integer
-    - description: Balance in coin
+    - description: Balance in account
       jsonPath: .status.meta.balance
       name: Balance
       type: string

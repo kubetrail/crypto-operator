@@ -51,7 +51,7 @@ type CoinStatusMeta struct {
 //+kubebuilder:printcolumn:name="Ticker",type="string",JSONPath=".spec.ticker",description="Ticker of coin"
 //+kubebuilder:printcolumn:name="Price",type="string",JSONPath=".status.meta.price",description="Price of coin"
 //+kubebuilder:printcolumn:name="NumCoins",type="string",JSONPath=".spec.numCoins",description="Number of coins"
-//+kubebuilder:printcolumn:name="Account",type="string",JSONPath=".status.meta.balance",description="Account in coin"
+//+kubebuilder:printcolumn:name="Balance",type="string",JSONPath=".status.meta.balance",description="Balance in coin"
 //+kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 
 // Coin is the Schema for the coins API

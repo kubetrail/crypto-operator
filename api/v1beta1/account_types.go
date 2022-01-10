@@ -44,9 +44,9 @@ type AccountStatusMeta struct {
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
-//+kubebuilder:printcolumn:name="Status",type="string",JSONPath=".status.phase",description="Status of coin"
+//+kubebuilder:printcolumn:name="Status",type="string",JSONPath=".status.phase",description="Status of account"
 //+kubebuilder:printcolumn:name="Coins",type="integer",JSONPath=".status.meta.numCoins",description="Number of coins"
-//+kubebuilder:printcolumn:name="Balance",type="string",JSONPath=".status.meta.balance",description="Balance in coin"
+//+kubebuilder:printcolumn:name="Balance",type="string",JSONPath=".status.meta.balance",description="Balance in account"
 //+kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 
 // Account is the Schema for the accounts API
