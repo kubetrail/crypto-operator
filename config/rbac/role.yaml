@@ -1,0 +1,34 @@
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  creationTimestamp: null
+  name: manager-role
+rules:
+- apiGroups:
+  - crypto.kubetrail.io
+  resources:
+  - coins
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - crypto.kubetrail.io
+  resources:
+  - coins/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - crypto.kubetrail.io
+  resources:
+  - coins/status
+  verbs:
+  - get
+  - patch
+  - update
