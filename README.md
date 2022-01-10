@@ -76,3 +76,29 @@ NAME          STATUS    TICKER   PRICE      NUMCOINS   BALANCE          AGE
 coin-sample   running   BTC      41815.68   100        4181568.000000   11s
 ```
 the price updates every minute
+
+## track account balance
+An account tracks a bunch of coins in the same namespace filtered by label keys
+`crypto.kubetrail.io/group`. If no such label key is present on the account object
+all coins are tracked. Using labels the coins can be grouped, for instance, `alt coins`
+were grouped below using label: `crypto.kubetrail.io/group: alt-coins`
+```bash
+└─ $ ▶ kubectl --namespace=my-coins get accounts.crypto.kubetrail.io,coins.crypto.kubetrail.io 
+NAME                                   STATUS    COINS   BALANCE         AGE
+account.crypto.kubetrail.io/all-coins  running   8       206317.846000   73s
+account.crypto.kubetrail.io/alt-coins  running   7       80831.9560000   73s
+
+NAME                                STATUS    TICKER   PRICE      NUMCOINS   BALANCE         AGE
+coin.crypto.kubetrail.io/arweave    error     AR                  10                         72s
+coin.crypto.kubetrail.io/bitcoin    running   BTC      41828.63   3          125485.890000   73s
+coin.crypto.kubetrail.io/cardano    running   ADA      1.1287     3500       3950.450000     73s
+coin.crypto.kubetrail.io/cosmos     running   ATOM     37.52      33         1238.160000     73s
+coin.crypto.kubetrail.io/crypto     running   CRO      0.452      5000       2260.000000     73s
+coin.crypto.kubetrail.io/ethereum   running   ETH      3071.97    17         52223.490000    73s
+coin.crypto.kubetrail.io/polkadot   running   DOT      23.72      98         2324.560000     72s
+coin.crypto.kubetrail.io/polygon    running   MATIC    2.0466     655        1340.523000     72s
+coin.crypto.kubetrail.io/solana     running   SOL      136.49     128        17470.720000    73s
+coin.crypto.kubetrail.io/terra      error     LUNA                123                        72s
+```
+Not all coins will list prices since some of them are not currently availble on Coinbase.
+
