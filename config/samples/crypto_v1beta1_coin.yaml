@@ -1,0 +1,6 @@
+apiVersion: crypto.kubetrail.io/v1beta1
+kind: Coin
+metadata:
+  name: coin-sample
+spec:
+  # Add fields here
