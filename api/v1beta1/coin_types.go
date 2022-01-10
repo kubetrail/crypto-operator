@@ -25,21 +25,34 @@ import (
 
 // CoinSpec defines the desired state of Coin
 type CoinSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
-
-	// Foo is an example field of Coin. Edit coin_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	Ticker   string `json:"ticker,omitempty"`
+	Currency string `json:"currency,omitempty"`
+	NumCoins string `json:"numCoins,omitempty"`
 }
 
 // CoinStatus defines the observed state of Coin
 type CoinStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	Phase      string             `json:"phase,omitempty"`
+	Message    string             `json:"message,omitempty"`
+	Reason     string             `json:"reason,omitempty"`
+	Conditions []metav1.Condition `json:"conditions,omitempty"`
+	Meta       CoinStatusMeta     `json:"meta,omitempty"`
+}
+
+// CoinStatusMeta packages meta info on coin price
+type CoinStatusMeta struct {
+	Price   string `json:"price,omitempty"`
+	Balance string `json:"balance,omitempty"`
 }
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
+//+kubebuilder:printcolumn:name="Status",type="string",JSONPath=".status.phase",description="Status of coin"
+//+kubebuilder:printcolumn:name="Ticker",type="string",JSONPath=".spec.ticker",description="Ticker of coin"
+//+kubebuilder:printcolumn:name="Price",type="string",JSONPath=".status.meta.price",description="Price of coin"
+//+kubebuilder:printcolumn:name="NumCoins",type="string",JSONPath=".spec.numCoins",description="Number of coins"
+//+kubebuilder:printcolumn:name="Balance",type="string",JSONPath=".status.meta.balance",description="Balance in coin"
+//+kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 
 // Coin is the Schema for the coins API
 type Coin struct {

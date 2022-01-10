@@ -17,6 +17,9 @@ limitations under the License.
 package v1beta1
 
 import (
+	"fmt"
+	"strconv"
+
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -42,7 +45,17 @@ var _ webhook.Defaulter = &Coin{}
 func (r *Coin) Default() {
 	coinlog.Info("default", "name", r.Name)
 
-	// TODO(user): fill in your defaulting logic.
+	if len(r.Spec.Ticker) == 0 {
+		r.Spec.Ticker = "BTC"
+	}
+
+	if len(r.Spec.Currency) == 0 {
+		r.Spec.Currency = "USD"
+	}
+
+	if len(r.Spec.NumCoins) == 0 {
+		r.Spec.NumCoins = "100"
+	}
 }
 
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
@@ -54,7 +67,12 @@ var _ webhook.Validator = &Coin{}
 func (r *Coin) ValidateCreate() error {
 	coinlog.Info("validate create", "name", r.Name)
 
-	// TODO(user): fill in your validation logic upon object creation.
+	if _, err := strconv.ParseFloat(r.Spec.NumCoins, 64); err != nil {
+		err := fmt.Errorf("invalid numCoins value, need float: %w", err)
+		coinlog.Error(err, "failed to parse numCoins")
+		return err
+	}
+
 	return nil
 }
 
@@ -62,7 +80,12 @@ func (r *Coin) ValidateCreate() error {
 func (r *Coin) ValidateUpdate(old runtime.Object) error {
 	coinlog.Info("validate update", "name", r.Name)
 
-	// TODO(user): fill in your validation logic upon object update.
+	if _, err := strconv.ParseFloat(r.Spec.NumCoins, 64); err != nil {
+		err := fmt.Errorf("invalid numCoins value, need float: %w", err)
+		coinlog.Error(err, "failed to parse numCoins")
+		return err
+	}
+
 	return nil
 }
 
