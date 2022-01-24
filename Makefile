@@ -3,7 +3,7 @@
 # To re-generate a bundle for another specific version without changing the standard setup, you can:
 # - use the VERSION as arg of the bundle target (e.g make bundle VERSION=0.0.2)
 # - use environment variables to overwrite this value (e.g export VERSION=0.0.2)
-VERSION ?= 0.0.2
+VERSION ?= 0.0.1
 
 # CHANNELS define the bundle channels used in the bundle.
 # Add a new line here if you would like to change its default config. (E.g CHANNELS = "candidate,fast,stable")
@@ -200,6 +200,7 @@ catalog-build: opm ## Build a catalog image.
 catalog-push: ## Push a catalog image.
 	$(MAKE) docker-push IMG=$(CATALOG_IMG)
 
+# ===============================================================================================
 # Code below has been added for custom builds using podman
 # formatting color values
 RD="$(shell tput setaf 1)"
@@ -210,8 +211,9 @@ NC="$(shell tput sgr0)"
 # Google artifact registry
 NAME=crypto-operator
 CATEGORY=services
+TAG=0.0.1-dev-0
 REPO=us-central1-docker.pkg.dev/${PROJECT}
-IMG_TMP=${REPO}/tmp/${CATEGORY}/${NAME}:$(VERSION)
+IMG_TMP=${REPO}/tmp/${CATEGORY}/${NAME}:${TAG}
 IMG_BASE=${REPO}/artifacts/${CATEGORY}/${NAME}
 
 # sanity check
@@ -254,56 +256,58 @@ podman-build-push: _sanity goimports vendor
 		PROJECT=${PROJECT} \
 		CATEGORY=${CATEGORY} \
 		NAME=${NAME} \
-		VERSION=${VERSION} \
+		TAG=${TAG} \
 		ARCH=amd64 \
 		envsubst | \
-		podman build --arch=amd64 -t ${IMG_BASE}:${VERSION}.amd64 -f -
-	@podman push ${IMG_BASE}:${VERSION}.amd64
+		podman build --arch=amd64 -t ${IMG_BASE}:${TAG}.amd64 -f -
+	@podman push ${IMG_BASE}:${TAG}.amd64
 	@echo -e ${YE}▶ building and pushing arm64 container${NC}
 	@cat Dockerfile-podman.tmpl | \
 		PROJECT=${PROJECT} \
 		CATEGORY=${CATEGORY} \
 		NAME=${NAME} \
-		VERSION=${VERSION} \
+		TAG=${TAG} \
 		ARCH=arm64 \
 		envsubst | \
-		podman build --arch=arm64 -t ${IMG_BASE}:${VERSION}.arm64 -f -
-	@podman push ${IMG_BASE}:${VERSION}.arm64
+		podman build --arch=arm64 -t ${IMG_BASE}:${TAG}.arm64 -f -
+	@podman push ${IMG_BASE}:${TAG}.arm64
 	@echo -e ${YE}▶ creating or modifying manifest${NC}
-	@podman manifest create ${IMG_BASE}:${VERSION} || \
-		for digest in $$(podman manifest inspect ${IMG_BASE}:${VERSION} | jq -r '.manifests[].digest'); do \
-			podman manifest remove ${IMG_BASE}:${VERSION} $${digest}; \
+	@podman manifest create ${IMG_BASE}:${TAG} || \
+		for digest in $$(podman manifest inspect ${IMG_BASE}:${TAG} | jq -r '.manifests[].digest'); do \
+			podman manifest remove ${IMG_BASE}:${TAG} $${digest}; \
 		done
 	@echo -e ${YE}▶ adding amd64 container to manifest${NC}
-	@podman manifest add ${IMG_BASE}:${VERSION} ${IMG_BASE}:${VERSION}.amd64
+	@podman manifest add ${IMG_BASE}:${TAG} ${IMG_BASE}:${TAG}.amd64
 	@echo -e ${YE}▶ adding arm64 container to manifest${NC}
-	@podman manifest add ${IMG_BASE}:${VERSION} ${IMG_BASE}:${VERSION}.arm64
+	@podman manifest add ${IMG_BASE}:${TAG} ${IMG_BASE}:${TAG}.arm64
 	@echo -e ${YE}▶ pushing manifest${NC}
-	@podman push ${IMG_BASE}:${VERSION}
-	@podman manifest inspect ${IMG_BASE}:${VERSION} | jq '.'
+	@podman push ${IMG_BASE}:${TAG}
+	@podman manifest inspect ${IMG_BASE}:${TAG} | jq '.'
 	@echo -e ${YE}▶ container images${NC}
 	@podman images | grep ${IMG_BASE}
 
-# deploy-dry-run creates manifests with custom updates of image name
-.PHONY: deploy-dry-run
-deploy-dry-run: manifests kustomize ## Deploy-dry-run generates k8s manifests without deploying
+# deploy-manifests creates manifests with custom updates of image name
+.PHONY: deploy-manifests
+deploy-manifests: manifests kustomize ## Deploy-manifests generates k8s manifests without deploying
 	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
 	$(KUSTOMIZE) build config/default --output config/extra/manifests.yaml
-	sed -i -e "s/image: controller:latest/image: $$(echo -n ${IMG_BASE}:${VERSION} | sed -e 's/\//\\\//g')/g" config/extra/manifests.yaml
+	sed -i -e "s/image: controller:latest/image: $$(echo -n ${IMG_BASE}:${TAG} | sed -e 's/\//\\\//g')/g" config/extra/manifests.yaml
 	$(KUSTOMIZE) build config/extra > config/samples/manifests.yaml
+	@echo "==============="
+	@echo kubectl apply -f config/samples/manifests.yaml
 
 # logs monitors logs from the controller
 .PHONY: logs
 logs:
-	@kubectl --namespace=crypto-operator-system logs -f deployments.apps/crypto-operator-controller-manager -c manager
+	@kubectl --namespace=${NAME}-system logs -f deployments.apps/${NAME}-controller-manager -c manager
 
 # reboot scales down and then up the controller deployment
 .PHONY: reboot
 reboot:
-	@kubectl --namespace=crypto-operator-system scale deployment --replicas=0 crypto-operator-controller-manager
-	@kubectl --namespace=crypto-operator-system scale deployment --replicas=1 crypto-operator-controller-manager
+	@kubectl --namespace=${NAME}-system scale deployment --replicas=0 ${NAME}-controller-manager
+	@kubectl --namespace=${NAME}-system scale deployment --replicas=1 ${NAME}-controller-manager
 
 # watch watches a few resources
 .PHONY: watch
 watch:
-	@watch kubectl --namespace=crypto-operator-system get pods,svc,configmaps,secrets,servicemonitors
+	@watch kubectl --namespace=${NAME}-system get pods,svc,configmaps,secrets,servicemonitors

@@ -7,7 +7,7 @@
 # pack a new container passing command line argument to ensure that the
 # arch of the new container image matches the arch requested.
 
-FROM us-central1-docker.pkg.dev/${PROJECT}/tmp/${CATEGORY}/${NAME}:${VERSION} as base
+FROM us-central1-docker.pkg.dev/${PROJECT}/tmp/${CATEGORY}/${NAME}:${TAG} as base
 
 # Use distroless as minimal base image to package the manager binary
 # Refer to https://github.com/GoogleContainerTools/distroless for more details
